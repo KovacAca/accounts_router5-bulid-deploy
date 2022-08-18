@@ -1,0 +1,225 @@
+    ***************************       10.  Accounts App                **************************
+
+npm install bootstrap react-router-dom --save   (--save - da se sve to sacuva u package.json-u)
+Unutar index.js :  
+import "bootstrap/dist/css/bootstrap.css";
+Pravimo App komponentu file: App.js , import react, class App extends Component{},export. 
+npm start
+Zelimo da renderujemo Header komponentu: return( <Header />), nemamo je, pravimo folder Header i u njemu fajl Header.js. import react. posto ce tu biti linkovi importovacemo Link i NavLink from "react-router-dom". Pravimo functional component Header koja return(vraca) navbar(bootstrap). Umesto a taga koristimo Link koji nas vodi(to) na "/" (na sam pocetak). U App.js ukljucujemo Header u return i importujemo ga.
+Dobijamo gresku: nemojte da koristite Link van Router-a. Moramo da ukljucimo u App.js u return BrowserRouter i na enter VSC ga sam importuje.
+U Header.js dodacemo u nav jos ul 3 Link-a. Iako pisemo Link ili NavLink to su samo a tagovi(inspect). Razlika je u tome sto NavLink dodaje activ klasu. Dodacemo nasu custom active klasu: activeClassName={"activeLink"}. Cim smo stavili nasu custom atribut tj. klasu to znaci da ce nam trebati i css. Pravimo Header.css i activeLink klasu. importujemo Header.css. Radi na vise linkova, resavamo to sa exact na to="/" . 
+!!!!!!!!!!!
+MENI OVO NE RADI. U NOVOM REACT ROUTERU NE TREBA EXACT I CUSTOM ATRIBUT A U CSS PAVIMO KLASU ACTIVE KOJU SAM DODAJE NavLink.           !!!!!!!!!
+
+      *********************            11. Accounts App 2                    ***********************
+
+Prvi link Accounts trebalo bi da uvek prikazuje accounts view.
+Pravimo komponentu AccountsTable u components/AccountsTable/AccountsTable.js functional component AccountsTable i u renderu pravimo tabelu iz bootstrapa.
+ U App.js u return dodajemo : <Route to="/"></Route> - VSC sam odradi import Route pored BrowserRouter u zagradi a kad renderujemo AccountsTable na enter VSC sam importuje AccountsTable.
+ Route moramo da pisemo u <Routes></Routes> vsc ce sam importovati pered Route sa ,
+   <Route path="/" element={<AccountsTable />} />
+Zatim u tabelu u AccountsTable dodajemo tbody> tr < td (table data)
+
+Medjutim, podaci treba da dolaze iz state-a nase aplikacije. State cemo za sada drzati unutar App.js. Sada nasa AccountsTable komponenta treba da prikaze podatke iz state-a. Moramo da posaljemo accounts komponenti AccountsTable.
+    <Route path="/" element={<AccountsTable accounts={this.state.accounts}/>} />
+To cemo prihvatiti u AccountsTable kao argument ({accounts}). 
+Trebace nam loop i metoda map da sve to lepo prikazemo u tabeli. Brisemo sve iz tbody-ja.
+gore iznad return pravimo varijablu allAccounts i map metodu(sta da uradi za svaki objekat iz niza accounts)
+    let allAccounts = accounts.map(account=>{
+      return (
+        <tr>
+          <td>{account.id}</td>
+          <td>{account.name}</td>
+          <td>{account.lastname}</td>
+          <td>{account.phene}</td>
+          <td>{account.email}</td>
+        </tr>
+      )
+    })
+pa u tbody ukljucujemo {allAccounts}.
+Medjutim mozemo ovaj jedan account da pretvorimo u sopstvenu komponentu:
+Pravimo components/Account/Account.js pravimo const Account te paste-emo onaj tr iz loop-a.
+Komponenta Account mora da zna sta je acccounts te moramo da joj prosledimo:
+Prvo cemo u AccountsTable u loop-u u return umesto onog tr renderovati Account komponentu <Account /> proveriti da li je importovao VSC pa cemo poslati account koji cemo prihvatiti u Account komponenti.
+key property takodje moramo da posaljemo key={account.id} ne moramo ga posebno prihvatiti.
+
+    ********************             12. Accounts App 3           ************************
+
+Napravicemo Add Account View koji ima i odredjene funkcionalnosti, da sacuva novi account koji ce se prikazati na Accounts View. Pravimo components/AddAccount/AddAccount.js i u njemu class based component zato sto cemo u njoj imati formu i manipulisati podacima. U AddAccount u return napravicemo html za nas view. U App.js u Routes dodati:
+        <Route path="/add" element={<AddAccount />} />
+U AddAccount dodacemo button i state.newAccount koji ima propertije iz account. Sada putem input polja iz forme zelimo da menjamo vrednosti account-a. Za to ce nam trebati onChange event listener: onChange={this.changeHandler}
+Moramo da napravimo funkciju changeHandler ispod state. Zelimo da svako input polje koristi istu changeHandler metodu a ne da imamo 4 razlicite metode za to. Zato smo svakom input polju dali poseban id. U changeHandler metodi prvo cemo da uzmemo sam taj id: let id = event.target.id; Obavezno moramo kao argument da prihvatimo taj event. Ako konsolujemo id dobicemo id iz inputa koji menjamo. Moramo da pazimo da se id-jevi iz inputa matcuju sa key-em u newAccount-u.
+Napravicemo kopiju state-a newAccountCopy i putem rest operatora kopirati objekat newAccount iz state:
+     let newAccountCopy = {...this.state.newAccount};
+Kopiju smo napravili da ne bi direktno menjali vrednosti unutar state. Sada mozemo newAccountCopy da uzmemo odredjeni properti:  newAccountCopy[id] a to ce biti name,lastname itd. zavisi sta menjamo u input polju i stavicemo da je vrednost event.target.value(sam value input polja);
+Zatim cemo zameniti state: this.setState({newAccount : newAccountCopy})
+Provera:      console.log(this.state.newAccount)
+Vidimo u konzoli da konzola svaki put kasni za jedan nas input. to je zato sto smo konzolovali u changeHandler metodi a ako to uradimo u componentDidUpdate metodi promena ce se videti svaki put kada nesto unesemo u input polje. To je zato sto vidimo console.log tek kada se update-ovala komponenta.
+    componentDidUpdate(){
+      console.log(this.state.newAccount);
+    }                                     ------  to nam vise ne treba pa mozemo izbrisati
+
+Ostalo nam je jos da button Save promeni state unutar App.js tj. doda novi account i tako ce se renderovati nas novi view(na setState se pokrece render metoda).
+Buttonu cemo dodati event onClick={this.addNewAccount} Napravicemo tu metodu ispod changeHandler. U addNewAccount metodi u AddAccount.js zelimo da menjamo state u App.js. Da bi to uradili moramo u App ispod state da napravimo metodu addNewAccountToState koja ce da prima neki account koji budemo poslali na klik Save. Tu metodu moramo proslediti komponenti addAccount:
+      <Route path="/add" element={<AddAccount addNewAccountToState={this.addNewAccountToState} />} />
+Sada moramo da je pozovemo u addNewAccount-a i proslediti this.state.newAccount:
+    addNewAccount = () => {
+      this.props.addNewAccountToState(this.state.newAccount);
+    }
+Dakle, kada button Save pozove na onClick funkciju addNewAccount u njoj cemo zapravo pozvati funkciju iz komponente App.js  addNewAccountToState i poslacemo joj nas account iz forme. Tada cemo u addNewAccountToState   dodati u acccount u state.acccounts a to ce pokrenuti render i u Accounts mozemo videti novi acccount.
+        addNewAccountToState = (acc) => {
+          this.setState({accounts : [...this.state.accounts, acc] });
+        }
+Zelimo da kada dodamo novi acccount na Save da se vratimo na Accounts view:
+Nacin da se vratimo jeste da se koristimo history object-om tako sto cemo reci push unutar samog history. Videli smo da se unutar this.props nalazi samo ova funkcija koju prosledjujemo iz App.js. Tu na snagu nastupa hoc koju nam provajduje sam react-router. Moramo da je importujemo:
+        import { withRouter} from "react-router-dom";
+hoc se koristi tako sto exportujemo nasu hoc komponentu i posaljemo kao parametar ovu nasu komponentu:
+    export default withRouter(AddAccount);
+Mozemo da testiramo to unutar changeHandler console.log(this.props)  
+Sada u addNewAccount kada posaljemo nas novokreirani account mozemo poslati nasu aplikaciju na /:
+       addNewAccount = () => {
+        this.props.addNewAccountToState(this.state.newAccount);
+        this.props.history.push("/");
+      }
+MENI NE RADI!!!!     upated  react-router  NAUCITI KAKO TO SADA RADI U v6
+React router v6 nema vise history object vec koristi useNavigate(). Medjutim hook useNavigate radi samo u function component. Zato sam prebacio kod AddAccount u function component, uzeo podatke iz forme i poslao ih u App.js a importovao useNavigate da bi u funkciji addNewAccount napisao navigate("/") i tako redirektovao prikazao Home view. Gore sam napisao let navigate = useNavigate(); Koristimo sam useState zato sto u function comp. nema state.
+
+    ******************            13.    Accounts App 4   -  Delete         *********************
+
+Napravicemo componentu za Edit/Delete view nazvacemo je EditTable.
+components/EditTable/EditTable.js i tu functional component sa tabelom istom kao AccountsTable. Zamenicemo Naslov u Edit/Delete i  <tr/> u  dodati dva dugmeta <th>Action</th>  * 2
+Napravicemo route u App.js    <Route path="/edit" element={<EditTable />} />    -  path pise u navbaru.
+Proveriti import EditTable.
+
+Vidimo da u Acoount komponenti nema dugmica za edit i delete. Mi bi mogli da napravimo novu komponentu npr.Account2 pa da koristimo i buttone ali mi cemo iskoristiti Account komponenetu koja ce nekad prikazivati dugmice a nekad ne.
+U EditTable zelimo da se sluzimo accouns-ima koje smo napravili, zato moramo da prihvatimo {accounts} kao argument koji smo poslali iz App.js:
+    <Route path="/edit" element={<EditTable />} accounts={this.state.accounts} /> 
+Sada u EditTable imamo accounts.    
+Na pocetku bodyja funkcije pravimo varijablu allAccounts i proci cemo kroz svaki account i za svaki vratiti komponentu Account kojoj cemo poslati account :    
+      const allAccounts = accounts.map(account=>{
+        return (
+          <Account account={account} edit={true} key={account.id}/>
+        )
+      })
+Za razliku od Accounta iz AccountsTable ovome cemo poslati novi property edit koji ima vrednost true: edit={true}
+Account komponentu vec posedujemo u Account.js. Prihvaticemo edit koji saljemo iz AccountsTable i njegova vrednost je true. Mozemo da ga testiramo: napravicemo novu const actionButtons. Zelim da napravim one nase buttone ali samo ako je componenta Account primila edit. Posluzicemo se ternari operatorom: kazacu edit kao if statement pa u zagradi prazne fragmente i u njima buttone:
+       const actionButtons = edit ? (
+          <>
+            <td><button className="btn btn-danger">Delete</button></td>
+            <td><button className="btn btn-warning">Edit</button></td>
+          </>
+        ) : null;
+Dakle ako je edit=true pokrenuce se prvi deo koda(napravicemo dugmice) a ako nije pokrenuce se deo koda iza : a mi cemo reci null posto ne zelimo nista da se pokrene(nema dugmica). Da bi to radilo moramo unutar return u tr dodati {actionButtons} ispod td.      VIDETI Account.js
+
+Sada cemo u Account.js button-u dodati onClick={deleteAccount} a ta funkcija mora da nam dodje iz App.js-a zato sto tu zelimo da obrisemo nesto iz state. U App.js pravimo function deleteAccount.Moramo da je prosledimo u EditTable
+   <Route path="/edit" element={<EditTable accounts={this.state.accounts} deleteAccount={this.deleteAccount} />} />
+pa kad je primimo iz EditTable u Account:
+    <Account account={account} edit={true} deleteAccount={deleteAccount} key={account.id}/>
+pa kad je primimo u Account mozemo da je koristimo. Da bi sa njom poslali id account-a koji treba da se obrise moramo napisati:
+   <td><button onClick={()=>{deleteAccount(account.id)}} className="btn btn-danger">Delete</button></td>
+To znaci da u App.js funkcija deleteAccount treba da primi id kao argument.
+Napravicemo kopiju state acccountsCopy:   const accountsCopy = [...this.state.accounts];
+Pa cemo koristiti filter metodu:
+      const newCopyAccounts = accountsCopy.filter(account=> account.id !== id)
+
+Ako pisemo na sledeci nacin sa zagradama{} treba nam return:
+      const newCopyAccounts = accountsCopy.filter(account => {
+        return account.id !== id
+      })
+
+Novi niz newCopyAccounts = od acccountsCopy filter pa cemo za svaki account da testiramo id ali neka se vrati samo ako id nije !== kao ovaj nas koji smo primili kao argument. Dakle, vrati svaki account ciji id nije ovaj koji smo primili sto znaci da ce u novom newCopyAccounts biti svi osim ovog koji zelimo da obrisemo.
+Ostalo je jos samo this.setState({accounts:newCopyAccounts})
+
+
+      *****************            14.  Accounts App 4 -  Edit               ********************
+
+Edit je samo dugme kao i delete ali mi zelimo da bude link koji nas vodi na novi view gde cemo videti account koji zelimo da editujemo. U Account.js promenicemo Edit da nije button nego Link. Da bi koristili link moramo da ga importujemo.
+      <td><Link to="/edit/1" className="btn btn-warning">Edit</Link></td>
+Zelimo da nas vodi na to="/edit/1" pa na recimo account koji ima id:1. Napravicemo to dinamicno:
+      <td><Link to={"/edit/"+account.id} className="btn btn-warning">Edit</Link></td>
+Sada vidimo url : http://localhost:3000/edit/1       -  1 ili 2 zavisi na koje dugme kliknemo.
+Idemo sada da odgovorimo na url. U App.js mi vec imamo edit putanju, ranije je to bio problem(exact) ali u v6 vise nije. Pravimo novi Route:   <Route path="/edit/:id" />    u kome cemo parametar posle / nazvati id.
+Kada bude takva putanja kada ima nesto posle edit zelimo da renderujemo EditAccount komponentu. 
+Napravicemo components/EditAccount/EditAccount.js a u App.js dodati element :
+    <Route path="/edit/:id" element={<EditAccount />} />    a VSC ce sam importovati EditAccount.
+
+                *******************
+U tutorijalu Edit view je ispod Accounts.   Meni nije zbog  v6 i sve radi dobro.
+Importujemo Swich:     import { BrowserRouter, Route, Routes, Switch} from "react-router-dom";
+Okruzicemo edit 2 putanje sa Switch. Kao i u JS switch statement kada naidje na jednu stvar koja je tacna izlazi iz switch statement i ne nastavlja dalje. Podignucemo putanju sa id gore tako da ako putanja ima id prikazace je ako nema prikazace putanju edit:
+          <Switch>
+            <Route path="/edit/:id" element={<EditAccount />} />
+            <Route path="/edit" element={<EditTable accounts={this.state.accounts} deleteAccount={this.deleteAccount} />} />
+          </Switch>
+U novoj verziji V6 switch nije potreban.
+                *******************
+
+Zelimo da nam se prikaze account koji ima id na koji smo kliknuli. Prvo moramo da u EditAccount posaljemo accounts iz naseg state u App.js.
+Sada unutar propsa klase EditAccount imamo state iz App.js. Napravicemo state unutar EditAccount klase. 
+state = { account : {id: "",name: "",lastName: "",phone: "",email: "" } }
+Kada se ova nasa komponenta mountuje mi zelimo da dodelimo vrednosti nasem accountu:
+        componentDidMount(){
+          // account ?    -  koji account mi treba da dodelimo accountu?
+        }
+Videli smo da je broj koji se nalazi u url-u id koji nas interesuje. Da bi saznali gde se on se nalazi moracemo da se koristimo hoc routera:
+           import { withRouter } from "react-router-dom";
+Moramo da je exportujemo : export default withRouter(EditAccount);
+Sada mozemo da konzolujemo:    
+                                  componentDidMount(){
+                                    console.log(this.props.match.params.id);
+                                  }
+Daj mi sta se nalazi u props od same ove komponente, pa u match propertiju .params.  Parametar je br koji se nalazi posle same putanje. Mi smo nas parametar nazvali id, zato .id
+Napravicemo accountForEdit i filterovati accounts iz propsa :
+    const accountForEdit = this.props.accounts.filter(acc => acc.id == this.props.match.params.id)
+this.props.acccounts - poslali smo acocunte i prolazimo kroz svaki (filter ) i unutar tog filtera pokrecemo funkciju za svaki od acccount-a(acc) i zelim da vratim unutar accountForEdit array-a (ne zaboravimo da filter metoda vraca novi array) true ako je acc.id jednak this.props.match.params.id (iz nase url adrese parametar id). Dakle filteruj kroz sve nase accounts i daj mi jedan account gde je id jednak parametru id iz nase url adrese . Posto filter vraca array stavicemo na kraju 0 da izvucemo samo taj account:
+     const accountForEdit = this.props.accounts.filter(acc => acc.id == this.props.match.params.id)[0];
+
+Sada accountu iz state zelimo da dodamo accountForEdit.  this.setState({account : accountForEdit});
+Da bi iskoristili ovo treba da u input polja dodamo value da je jednak accountu iz setState:
+    <input type="text" id="name" className="form-control" value={this.state.account.name}/><br />
+Sada imamo popunjena input polja.
+
+    ***********         MENI OVO NISTA NE RADI ZBOG v6!!!!!     RADI V5.2.0   ***********
+
+              *********************          15 Accounts App       **************************
+
+Ovako radi ali u konzoli pise da smo postavili value ali nismo koristili onChange handler:
+You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+Dodacemo onChange handler na sva input polja:
+<input onChange={this.changeAccount} type="text" id="name" className="form-control" value={this.state.account.name} /><br />
+Napravicemo changeAccount metodu i u njoj podesiti da svako input polje u odnosu na id menja bas taj property. A onda cemo to postaviti i state i videti da promena u input polju radi. 
+Sada zelimo da izvrsimo promenu, trebace nam kontrola Edit button-a.Dodacemo onClick listener editAccount pa pravimo tu metodu. Sada zelimo da unutar ove funkcije pozovemo funkciju koja se nalazi u App.js zato sto zelimo da tamo menjamo accounts. Zato treba da joj posaljemo taj account. Ta metoda editAccount ce se nalaziti u this.props.editAccount i njoj cemo poslati this.state.acccount:
+        editAccount = () => {
+          this.props.editAccount(this.state.account);
+        }
+Da bi imali pristup props.editAccount moramo poslati metodu editAccount iz App.js:
+  <Route path="/edit/:id"><EditAccount accounts={this.state.accounts} editAccount={this.editAccount} /></Route>
+To cemo proveriti u App.js:      editAccount = (acc) => {
+                                    console.log(acc);
+                                  }
+Sada je editovan acc dostupan u App.js i treba da ga postavimo unutar accounts-a bas na mesto gde se nalazi taj account u state.accounts.
+          editAccount = (acc) => {
+            const copyAccounts = [...this.state.accounts];
+            let accountPossition = copyAccounts.map(account => account.id).indexOf(acc.id);            
+            copyAccounts[accountPossition] = acc;
+            this.setState({accounts: copyAccounts});
+          }
+map vraca novi array, zelimo da prodjemo kroz svaki account i za svaki od accounta vraticu njegov id. console.log(accountPossition) - dobicemo array sa id-jevima. Sada ja zelim da nadjem indeksnu poziciju npr. Danila po njegovom id-ju. zato cu od array-a traziti indexOf(acc.id) od account-a koji smo poslali njegov id(acc.id). Dakle, Danilo je na poziciji 1, pitacu gde se nalazi 1 a on ce reci na nultoj poziciji.
+Sada mozemo u copyAccounts na poziciji 0 da postavimo account koji smo poslali:
+      copyAccounts[accountPossition] = acc;              pa zameniti state.
+
+
+              ******************      16-22 Pogledati react-hoocs  folder     *******************
+              *********************          24. Build Deploy       **************************
+
+Kada napravimo neku react aplikaciju, svi fajlovi su za nas u development modu i mi mozemo tu aplikaciju da vidimo zbog webpack-a, node.js-a i lokalnog servera. Medjutim, na serveru gde ce svi moci da vide nasu aplikaciju trebace nam da bildujemo nas projekat:   npm run build
+Napravice se build folder gde imamo static folder gde cemo imati css fajlove, js fajlove, nas index.html se nalazi van static foldera. Sve ono sto se nalazi u build-u to je ono sto mi zelimo da prikazemo krajnjem korisniku. Mozemo i da pogledamo krajnju build verziju tako sto cemo u terminalu instalirati npm i -g serve, enter,  pa napisati:   serve -s build. Videcemo gde se nalazi(npr. localhost: 63119) i kad drzimo ctrl i klik misem i otvorice mi se localhost:63119. Ova aplikacija je pokrenuta iz build-a dok je ona prva iz naseg webpack-a, iz naseg lokalnog servera. Dakle, aplikacija iz build-a je ona koju bi trebalo da push-ujemo na server i da postane websajt kome ce korisnici moci da pristupe.
+
+Nasu react aplikaciju po defaultu prati git:  git status  - prikazace sve fajlove koje smo modifikovali, brisali itd.
+Napravicemo inicijalni commit: git add.  - dodali smo sve u git  pa  git commit -m"naziv"
+Sada treba da prebacimo to u github. Na github.com napravicemo novi repository: unecemo name, public, ne treba Initialize jer to vec  imamo u react app pa Creating repository...
+Treba nam git remote:      git remote add origin https://github.com/KovacAca/accounts_router5-bulid-deploy.git
+da dodamo unutar naseg projekta u terminal da bi nas projekat znao gde da push-uje fajlove.
+Zatim pisemo git push -u origin master
+Sada su svi nasi fajlovi prebaceni na github.
+
